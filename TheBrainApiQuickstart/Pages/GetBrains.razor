@@ -1,0 +1,98 @@
+﻿@page "/getBrains"
+
+<PageTitle>Get Brains</PageTitle>
+
+@using System.Text
+@using System.Text.Json
+@using Microsoft.Extensions.Options
+@using TheBrainApiQuickstart.Data
+
+@inject HttpClient HttpClient 
+@inject IOptions<ApiSettings> ApiSettings
+
+<h1>Get Brains</h1>
+
+<p>This component demonstrates how to get a list of the active user's brains via an API request.</p>
+
+<hr class="my-lg-4"/>
+
+<div class="flex-row mb-4">
+    <button class="btn btn-primary" @onclick="OnSubmit">Get Brains</button>
+</div>
+
+@if(_showStatusMessage) {
+    <div class="flex-row mb-2">
+        <span class="text-warning">@_statusMessage</span>
+    </div>
+}
+
+@if(_showBrainTable) {
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Home Thought ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var brain in _brains) {
+                <tr>
+                    <td>@brain.id</td>
+                    <td>@brain.name</td>
+                    <td>@brain.homeThoughtId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    
+    private bool _showStatusMessage;
+    private string _statusMessage;
+
+    private bool _showBrainTable;
+    private List<Brain> _brains = new List<Brain>();
+
+    private string apiKey;
+
+    protected override void OnInitialized() {
+        apiKey = ApiSettings.Value.ApiKey;
+    }
+
+    private async Task OnSubmit() {
+
+        string endpoint = "/brains";
+        
+        HttpClient.DefaultRequestHeaders.Add("accept", "text/plain");
+        HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+        try {
+            var response = await HttpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+            string brainsJson = await response.Content.ReadAsStringAsync();
+            ShowBrainsTable(brainsJson);
+
+        } catch(Exception ex) {
+            ShowStatusMessage(ex.Message);
+            return;
+        } finally {
+            HttpClient.DefaultRequestHeaders.Clear();
+        }
+        
+        ShowStatusMessage("Success!");
+        StateHasChanged();
+    }
+
+    private void ShowStatusMessage(string message) {
+        _statusMessage = message;
+        _showStatusMessage = true;
+    }
+
+    private void ShowBrainsTable(string json) {
+        _brains = JsonSerializer.Deserialize<List<Brain>>(json);
+        _showBrainTable = true;
+    }
+}

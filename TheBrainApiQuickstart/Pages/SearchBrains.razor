@@ -1,0 +1,127 @@
+﻿@page "/searchBrains"
+
+<PageTitle>Search Brains</PageTitle>
+
+@using System.Text.Json
+@using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Options
+@using TheBrainApiQuickstart.Data
+@inject HttpClient HttpClient
+@inject IOptions<ApiSettings> ApiSettings
+
+<h1>Search Accessible Brains</h1>
+
+<p>This component demonstrates how to perform a search in all user-accessible brains via an API request.</p>
+
+<hr class="my-lg-4"/>
+
+<div class="flex-row mb-4">
+	<span class="text-warning">* </span><span>Query Text:</span>
+	<input type="text" @bind="_queryText"/>
+</div>
+
+<div class="flex-row mb-4">
+	<span class="text-warning">* </span><span>Max Results:</span>
+	<input type="number" @bind="_maxResults"/>
+</div>
+
+<div class="flex-row mb-4">
+	<span class="text-warning">* </span><span>Only Search Thought Names:</span>
+	<input type="checkbox" @bind="_onlySearchThtNames"/>
+</div>
+
+<div class="flex-row mb-4">
+	<button class="btn btn-primary" @onclick="OnSubmit">Submit</button>
+</div>
+
+@if(_showStatusMessage) {
+	<div class="flex-row mb-2">
+		<span class="text-warning">@_statusMessage</span>
+	</div>
+}
+
+@if(_searchResults != null && _searchResults.Any()) {
+	<table class="table">
+		<thead>
+		<tr>
+			<th>Name</th>
+			<th>Brain Name</th>
+			<th>Brain Id</th>
+			<th>Source Thought ID</th>
+			<th>Source Entity Type</th>
+			<th>Result Type</th>
+		</tr>
+		</thead>
+		<tbody>
+		@foreach(var result in _searchResults) {
+			<tr>
+				<td>@result.name</td>
+				<td>@result.brainName</td>
+				<td>@result.brainId</td>
+				<td>@result.sourceThought?.id</td>
+				<td>@result.sourceType</td>
+				<td>@result.searchResultType</td>
+			</tr>
+		}
+		</tbody>
+	</table>
+}
+
+@code {
+
+	private string _queryText;
+	private int _maxResults = 30;
+	private bool _onlySearchThtNames;
+
+	private bool _showStatusMessage;
+	private string _statusMessage;
+
+	private List<SearchResult> _searchResults;
+
+	private string apiKey;
+
+	protected override void OnInitialized() {
+		apiKey = ApiSettings.Value.ApiKey;
+	}
+
+	private async Task OnSubmit() {
+
+		if(string.IsNullOrWhiteSpace(_queryText)) {
+			ShowStatusMessage("Please provide a Query Text value.");
+			return;
+		}
+
+		if(_maxResults < 1) {
+			ShowStatusMessage("Please set Max Results to at least '1'.");
+			return;
+		}
+		
+		_queryText = Uri.EscapeDataString(_queryText);
+
+		string endpoint = $"/search/accessible?queryText={_queryText}&maxResults={_maxResults}&onlySearchThoughtNames={_onlySearchThtNames}";
+
+		HttpClient.DefaultRequestHeaders.Add("accept", "text/plain");
+		HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+		try {
+			var response = await HttpClient.GetAsync(endpoint);
+			response.EnsureSuccessStatusCode();
+			string json = await response.Content.ReadAsStringAsync();
+			_searchResults = JsonSerializer.Deserialize<List<SearchResult>>(json);
+		} catch(Exception ex) {
+			ShowStatusMessage(ex.Message);
+			return;
+		} finally {
+			HttpClient.DefaultRequestHeaders.Clear();
+		}
+
+		ShowStatusMessage("Success!");
+		StateHasChanged();
+	}
+
+	private void ShowStatusMessage(string message) {
+		_statusMessage = message;
+		_showStatusMessage = true;
+	}
+
+}

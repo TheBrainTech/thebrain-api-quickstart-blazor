@@ -1,0 +1,64 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+	<div class="container-fluid">
+		<a class="navbar-brand" href="">TheBrainApiQuickstart</a>
+		<button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+	</div>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+	<nav class="flex-column">
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+				<span class="oi oi-home" aria-hidden="true"></span> Home
+			</NavLink>
+		</div>
+		<hr class="m-0"/>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="createThought">
+				<span class="oi oi-list-rich" aria-hidden="true"></span> Create Thought
+			</NavLink>
+		</div>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="updateThought">
+				<span class="oi oi-list-rich" aria-hidden="true"></span> Update Thought
+			</NavLink>
+		</div>
+		<hr class="m-0"/>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="getThoughtGraph">
+				<span class="oi oi-list-rich" aria-hidden="true"></span> Get Thought Graph
+			</NavLink>
+		</div>
+		<hr class="m-0"/>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="getBrains">
+				<span class="oi oi-list-rich" aria-hidden="true"></span> Get Brains
+			</NavLink>
+		</div>
+		<hr class="m-0"/>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="searchBrains">
+				<span class="oi oi-list-rich" aria-hidden="true"></span> Search Brains
+			</NavLink>
+		</div>
+		<hr class="m-0"/>
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="getNoteAsHtml">
+				<span class="oi oi-list-rich" aria-hidden="true"></span> Get Note
+			</NavLink>
+		</div>
+	</nav>
+</div>
+
+@code {
+	private bool collapseNavMenu = true;
+
+	private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+	private void ToggleNavMenu() {
+		collapseNavMenu = !collapseNavMenu;
+	}
+
+}

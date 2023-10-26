@@ -1,0 +1,292 @@
+﻿@page "/getThoughtGraph"
+
+<PageTitle>Get Thought Graph</PageTitle>
+
+@using System.Text
+@using System.Text.Json
+@using Microsoft.Extensions.Options
+@using TheBrainApiQuickstart.Data
+
+@inject HttpClient HttpClient 
+@inject IOptions<ApiSettings> ApiSettings
+
+<h1>Get Thought Graph</h1>
+
+<p>This component demonstrates how to get a thought graph via an API request.</p>
+
+
+<hr class="my-lg-4"/>
+
+
+<div class="flex-row mb-4">
+    <span class="text-warning">* </span><span>Brain ID:</span>
+    <input type="text" @bind="_brainId" style="width: 320px;"/>
+</div>
+
+<div class="flex-row mb-4">
+    <span class="text-warning">* </span><span>Thought ID:</span>
+    <input type="text" @bind="_thoughtId" style="width: 320px;"/>
+</div>
+
+
+<div class="flex-row mb-4">
+    <button class="btn btn-primary" @onclick="OnSubmit">Submit</button>
+</div>
+
+@if(_showStatusMessage) {
+    <div class="flex-row mb-2">
+        <span class="text-warning">@_statusMessage</span>
+    </div>
+}
+
+@if(_thoughtGraph != null) {
+    
+    <!-- Active Thought Section -->
+    <div class="border border-warning mb-3 p-3 rounded-3">
+        <h2>Active Thought</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="border-secondary">Name</th>
+                <th class="border-secondary">Label</th>
+                <th class="border-secondary">ID</th>
+                <th class="border-secondary">ACType</th>
+                <th class="border-secondary">Kind</th>
+                <th class="border-secondary">Creation Date Time</th>
+                <th class="border-secondary">Modification Date Time</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr class="border-secondary">
+                    <td>@_thoughtGraph.activeThought.name</td>
+                    <td>@_thoughtGraph.activeThought.label</td>
+                    <td>@_thoughtGraph.activeThought.id</td>
+                    <td>@_thoughtGraph.activeThought.acType</td>
+                    <td>@_thoughtGraph.activeThought.kind</td>
+                    <td>@_thoughtGraph.activeThought.creationDateTime</td>
+                    <td>@_thoughtGraph.activeThought.modificationDateTime</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Parents Section -->
+    <div class="border border-warning mb-3 p-3 rounded-3">
+        <h2>Parents</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="border-secondary">Name</th>
+                <th class="border-secondary">Label</th>
+                <th class="border-secondary">ID</th>
+                <th class="border-secondary">ACType</th>
+                <th class="border-secondary">Kind</th>
+                <th class="border-secondary">Creation Date Time</th>
+                <th class="border-secondary">Modification Date Time</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach(var parent in _thoughtGraph.parents) {
+                <tr class="border-secondary">
+                    <td>@parent.name</td>
+                    <td>@parent.label</td>
+                    <td>@parent.id</td>
+                    <td>@parent.acType</td>
+                    <td>@parent.kind</td>
+                    <td>@parent.creationDateTime</td>
+                    <td>@parent.modificationDateTime</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Children Section -->
+    <div class="border border-warning mb-3 p-3 rounded-3">
+        <h2>Children</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="border-secondary">Name</th>
+                <th class="border-secondary">Label</th>
+                <th class="border-secondary">ID</th>
+                <th class="border-secondary">ACType</th>
+                <th class="border-secondary">Kind</th>
+                <th class="border-secondary">Creation Date Time</th>
+                <th class="border-secondary">Modification Date Time</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach(var child in _thoughtGraph.children) {
+                <tr class="border-secondary">
+                    <td>@child.name</td>
+                    <td>@child.label</td>
+                    <td>@child.id</td>
+                    <td>@child.acType</td>
+                    <td>@child.kind</td>
+                    <td>@child.creationDateTime</td>
+                    <td>@child.modificationDateTime</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Jumps Section -->
+    <div class="border border-warning mb-3 p-3 rounded-3">
+        <h2>Jumps</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="border-secondary">Name</th>
+                <th class="border-secondary">Label</th>
+                <th class="border-secondary">ID</th>
+                <th class="border-secondary">ACType</th>
+                <th class="border-secondary">Kind</th>
+                <th class="border-secondary">Creation Date Time</th>
+                <th class="border-secondary">Modification Date Time</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach(var jump in _thoughtGraph.jumps) {
+                <tr class="border-secondary">
+                    <td>@jump.name</td>
+                    <td>@jump.label</td>
+                    <td>@jump.id</td>
+                    <td>@jump.acType</td>
+                    <td>@jump.kind</td>
+                    <td>@jump.creationDateTime</td>
+                    <td>@jump.modificationDateTime</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Links Section -->
+    <div class="border border-warning mb-3 p-3 rounded-3">
+        <h2>Links</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="border-secondary">Link ID</th>
+                <th class="border-secondary">Thought A ID</th>
+                <th class="border-secondary">Thought B ID</th>
+                <th class="border-secondary">Creation Date Time</th>
+                <th class="border-secondary">Kind</th>
+                <th class="border-secondary">Thickness</th>
+                <th class="border-secondary">Relation</th>
+                <th class="border-secondary">Direction</th>
+                <th class="border-secondary">Meaning</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach(var link in _thoughtGraph.links) {
+                <tr class="border-secondary">
+                    <td>@link.id</td>
+                    <td>@link.thoughtIdA</td>
+                    <td>@link.thoughtIdB</td>
+                    <td>@link.creationDateTime</td>
+                    <td>@link.kind</td>
+                    <td>@link.thickness</td>
+                    <td>@link.relation</td>
+                    <td>@link.direction</td>
+                    <td>@link.meaning</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Attachments Section -->
+    <div class="border border-warning mb-3 p-3 rounded-3">
+        <h2>Attachments</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="border-secondary">Name</th>
+                <th class="border-secondary">ID</th>
+                <th class="border-secondary">Is Note</th>
+                <th class="border-secondary">Type</th>
+                <th class="border-secondary">Location</th>
+                <th class="border-secondary">Data Length</th>
+                <th class="border-secondary">Creation Date Time</th>
+                <th class="border-secondary">Modification Date Time</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach(var attachment in _thoughtGraph.attachments) {
+                <tr class="border-secondary">
+                    <td>@attachment.name</td>
+                    <td>@attachment.id</td>
+                    <td>@attachment.isNotes</td>
+                    <td>@attachment.type</td>
+                    <td>@attachment.location</td>
+                    <td>@attachment.dataLength</td>
+                    <td>@attachment.creationDateTime</td>
+                    <td>@attachment.modificationDateTime</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+
+@code {
+    
+    private string _brainId;
+    private string _thoughtId;
+
+    private ThoughtGraph? _thoughtGraph;
+    
+    private bool _showStatusMessage;
+    private string _statusMessage;
+
+    private string apiKey;
+
+    protected override void OnInitialized() {
+        apiKey = ApiSettings.Value.ApiKey;
+    }
+
+    private async Task OnSubmit() {
+        
+		Guid.TryParse(_brainId, out Guid brainId);
+		Guid.TryParse(_thoughtId, out Guid thoughtId);
+
+        if(brainId == Guid.Empty) {
+            ShowStatusMessage("Unable to parse Brain ID.");
+            return;
+        }
+        
+        if(thoughtId == Guid.Empty) {
+            ShowStatusMessage("Unable to parse Brain ID.");
+            return;
+        }
+
+        string endpoint = $"/thoughts/{brainId}/{thoughtId}/graph";
+        
+        HttpClient.DefaultRequestHeaders.Add("accept", "text/plain");
+        HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+        try {
+            var response = await HttpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+            string json = await response.Content.ReadAsStringAsync();
+            _thoughtGraph = JsonSerializer.Deserialize<ThoughtGraph>(json);
+        } catch(Exception ex) {
+            ShowStatusMessage(ex.Message);
+            return;
+        } finally {
+            HttpClient.DefaultRequestHeaders.Clear();
+        }
+        
+        ShowStatusMessage("Success!");
+        StateHasChanged();
+    }
+
+    private void ShowStatusMessage(string message) {
+        _statusMessage = message;
+        _showStatusMessage = true;
+    }
+}

@@ -1,0 +1,107 @@
+﻿@page "/getNoteAsHtml"
+
+<PageTitle>Get Note as HTML</PageTitle>
+
+@using System.Text
+@using System.Text.Json
+@using Microsoft.Extensions.Options
+@using TheBrainApiQuickstart.Data
+
+@inject HttpClient HttpClient 
+@inject IOptions<ApiSettings> ApiSettings
+
+<h1>Get Note as HTML</h1>
+
+<p>This component demonstrates how to get a list of the active user's brains via an API request.</p>
+
+
+<hr class="my-lg-4"/>
+
+
+<div class="flex-row mb-4">
+    <span class="text-warning">* </span><span>Brain ID:</span>
+    <input type="text" @bind="_brainId" style="width: 320px;"/>
+</div>
+
+<div class="flex-row mb-4">
+    <span class="text-warning">* </span><span>Thought ID:</span>
+    <input type="text" @bind="_thoughtId" style="width: 320px;"/>
+</div>
+
+
+<div class="flex-row mb-4">
+    <button class="btn btn-primary" @onclick="OnSubmit">Get Brains</button>
+</div>
+
+@if(_showStatusMessage) {
+    <div class="flex-row mb-2">
+        <span class="text-warning">@_statusMessage</span>
+    </div>
+}
+
+@if(!string.IsNullOrWhiteSpace(_noteHtml.ToString())) {
+    <div class="border border-warning p-3" style="border-radius: 0.5rem;">
+        @_noteHtml
+    </div>
+}
+
+@code {
+    
+    private string _brainId;
+    private string _thoughtId;
+
+    private MarkupString _noteHtml;
+    
+    private bool _showStatusMessage;
+    private string _statusMessage;
+
+    private bool _showBrainTable;
+
+    private string apiKey;
+
+    protected override void OnInitialized() {
+        apiKey = ApiSettings.Value.ApiKey;
+    }
+
+    private async Task OnSubmit() {
+        
+		Guid.TryParse(_brainId, out Guid brainId);
+		Guid.TryParse(_thoughtId, out Guid thoughtId);
+
+        if(brainId == Guid.Empty) {
+            ShowStatusMessage("Unable to parse Brain ID.");
+            return;
+        }
+        
+        if(thoughtId == Guid.Empty) {
+            ShowStatusMessage("Unable to parse Brain ID.");
+            return;
+        }
+
+        string endpoint = $"/notes/{brainId}/{thoughtId}/html";
+        
+        HttpClient.DefaultRequestHeaders.Add("accept", "text/plain");
+        HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+        try {
+            var response = await HttpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+            string json = await response.Content.ReadAsStringAsync();
+            NoteResponse note = JsonSerializer.Deserialize<NoteResponse>(json);
+            _noteHtml = new MarkupString(note.html);
+        } catch(Exception ex) {
+            ShowStatusMessage(ex.Message);
+            return;
+        } finally {
+            HttpClient.DefaultRequestHeaders.Clear();
+        }
+        
+        ShowStatusMessage("Success!");
+        StateHasChanged();
+    }
+
+    private void ShowStatusMessage(string message) {
+        _statusMessage = message;
+        _showStatusMessage = true;
+    }
+}

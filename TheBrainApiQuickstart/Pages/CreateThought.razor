@@ -1,0 +1,138 @@
+﻿@page "/createThought"
+
+<PageTitle>Create Thought</PageTitle>
+
+@using System.Text
+@using System.Text.Json
+@using Microsoft.Extensions.Options
+@using TheBrainApiQuickstart.Data
+
+@inject HttpClient HttpClient 
+@inject IOptions<ApiSettings> ApiSettings
+
+<h1>Create Thought</h1>
+
+<p>This component demonstrates how to create a new thought via an API request.</p>
+
+
+<hr class="my-lg-4"/>
+
+
+<ol>
+	<li>Log in to the embedded Web Client below with your TheBrain Account credentials.</li>
+	<li>Open a brain and activate a thought.</li>
+	<li>Right-click the thought and select <code>Open in New Tab</code>.</li>
+	<li>Copy the first Guid in the URL and paste into the <code>Brain ID</code> text entry on this page.</li>
+	<li>Copy the second Guid in the URL and paste into the <code>Source Thought ID</code> text entry on this page.</li>
+	<li>Fill in the <code>Name</code> and <code>Label</code> field for the thought to create.</li>
+	<li>Click <code>Submit</code> and watch the magic happen!</li>
+</ol>
+
+<hr class="my-lg-4"/>
+
+
+<div class="flex-row mb-4">
+	<span class="text-warning">* </span><span>Brain ID:</span>
+	<input type="text" @bind="_brainId" style="width: 320px;"/>
+</div>
+
+<div class="flex-row mb-4">
+	<span class="text-warning">* </span><span>Source Thought ID:</span>
+	<input type="text" @bind="_sourceThoughtId" style="width: 320px;"/>
+</div>
+
+
+<hr class="my-lg-4"/>
+
+
+<div class="flex-row mb-4">
+	<span class="text-warning">* </span><span>New Thought's Name:</span>
+	<input type="text" @bind="_newThoughtName"/>
+</div>
+
+<div class="flex-row mb-4">
+	<span>New Thought's Label:</span>
+	<input type="text" @bind="_newThoughtLabel"/>
+</div>
+
+<div class="flex-row mb-4">
+	<button class="btn btn-primary" @onclick="OnSubmit">Submit</button>
+</div>
+
+
+@if(_showStatusMessage) {
+	<div class="flex-row mb-2">
+		<span class="text-warning">@_statusMessage</span>
+	</div>
+}
+
+
+<div class="mt-5">
+	<iframe src="@iFrameSrc" class="w-100 border border-warning" style="height:800px;border-radius: 0.5rem;"></iframe>
+</div>
+
+
+@code {
+	
+	private string _brainId;
+	private string _sourceThoughtId;
+
+	private string _newThoughtName;
+	private string _newThoughtLabel;
+
+	private string _newThoughtId;
+
+	private bool _showStatusMessage;
+	private string _statusMessage;
+
+	private string apiKey;
+	private string iFrameSrc;
+
+	protected override void OnInitialized() {
+		apiKey = ApiSettings.Value.ApiKey;
+		iFrameSrc = ApiSettings.Value.WebClientUrl;
+	}
+
+	private async Task OnSubmit() {
+		Guid.TryParse(_brainId, out Guid brainId);
+		Guid.TryParse(_sourceThoughtId, out Guid sourceThoughtId);
+
+		ThoughtCreateModel thought = new ThoughtCreateModel {
+			Name = _newThoughtName,
+			Kind = 1,
+			Label = _newThoughtLabel,
+			Relation = 1,
+			SourceThoughtId = sourceThoughtId,
+			TypeId = Guid.Empty,
+			AcType = 0
+		};
+
+		string endpoint = $"/thoughts/{brainId}";
+		
+		var jsonContent = JsonSerializer.Serialize(thought);
+		var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+		
+		HttpClient.DefaultRequestHeaders.Add("accept", "text/plain");
+		HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+		try {
+			var response = await HttpClient.PostAsync(endpoint, httpContent);
+			response.EnsureSuccessStatusCode();
+			_newThoughtId = await response.Content.ReadAsStringAsync();
+		} catch(Exception ex) {
+			ShowStatusMessage(ex.Message);
+			return;
+		} finally {
+			HttpClient.DefaultRequestHeaders.Clear();
+		}
+		
+		ShowStatusMessage($"Success! New Thought's ID: {_newThoughtId}");
+		
+		StateHasChanged();
+	}
+
+	private void ShowStatusMessage(string message) {
+		_statusMessage = message;
+		_showStatusMessage = true;
+	}
+}
